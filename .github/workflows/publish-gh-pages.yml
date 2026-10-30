@@ -1,0 +1,36 @@
+name: Publish built site to gh-pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+      - name: Install UglifyJS
+        run: npm install -g uglify-js
+      - name: Minify JS files
+        run: uglifyjs assets/js/plugins/jquery.greedy-navigation.js assets/js/_main.js assets/js/theme.js -c -m -o assets/js/main.min.js
+      - name: Build with Jekyll
+        run: bundle exec jekyll build --baseurl "/LJT-Homepage"
+        env:
+          JEKYLL_ENV: production
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          force_orphan: true
+      - name: Check published URL
+        run: |
+          sleep 20
+          curl -sS -o /dev/null -w 'Homepage HTTP status: %{http_code}\n' https://spanellisnikolaos564-maker.github.io/LJT-Homepage/
+          curl -sS -o /dev/null -w 'Publications HTTP status: %{http_code}\n' https://spanellisnikolaos564-maker.github.io/LJT-Homepage/publications/
